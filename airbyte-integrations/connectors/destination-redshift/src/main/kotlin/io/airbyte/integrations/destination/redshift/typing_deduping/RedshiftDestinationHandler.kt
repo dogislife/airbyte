@@ -33,21 +33,37 @@ class RedshiftDestinationHandler(
         SQLDialect.DEFAULT
     ) {
     override fun createNamespaces(schemas: Set<String>) {
-        TODO("Not yet implemented")
+        // plain SHOW SCHEMAS doesn't work, we have to specify the database name explicitly
+        val existingSchemas =
+            jdbcDatabase.queryJsons("""SHOW SCHEMAS FROM DATABASE "$catalogName";""").map {
+                it["schema_name"].asText()
+            }
+        schemas.forEach {
+            if (!existingSchemas.contains(it)) {
+                log.info { "Schema $it does not exist, proceeding to create it" }
+                jdbcDatabase.execute("""CREATE SCHEMA IF NOT EXISTS "$it";""")
+            }
+        }
     }
 
     @Throws(Exception::class)
     override fun execute(sql: Sql) {
+        execute(sql, logStatements = true)
+    }
+
+    fun execute(sql: Sql, logStatements: Boolean) {
         val transactions = sql.transactions
         val queryId = UUID.randomUUID()
         for (transaction in transactions) {
             val transactionId = UUID.randomUUID()
-            log.info(
-                "Executing sql {}-{}: {}",
-                queryId,
-                transactionId,
-                java.lang.String.join("\n", transaction)
-            )
+            if (logStatements) {
+                log.info(
+                    "Executing sql {}-{}: {}",
+                    queryId,
+                    transactionId,
+                    java.lang.String.join("\n", transaction)
+                )
+            }
             val startTime = System.currentTimeMillis()
 
             try {
