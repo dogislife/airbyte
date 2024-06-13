@@ -191,20 +191,22 @@ abstract class AbstractSnowflakeTypingDedupingTest : BaseTypingDedupingTest() {
             catalog,
             messages1,
             "airbyte/destination-snowflake:2.1.7",
-        ) { config: JsonNode? ->
-            // Defensive to avoid weird behaviors or test failures if the original config is being
-            // altered by
-            // another thread, thanks jackson for a mutable JsonNode
-            val copiedConfig = Jsons.clone(config!!)
-            if (config is ObjectNode) {
-                // Opt out of T+D to run old V1 sync
-                (copiedConfig as ObjectNode?)!!.put(
-                    "use_1s1t_format",
-                    false,
-                )
+            { config: JsonNode? ->
+                // Defensive to avoid weird behaviors or test failures if the original config is
+                // being
+                // altered by
+                // another thread, thanks jackson for a mutable JsonNode
+                val copiedConfig = Jsons.clone(config!!)
+                if (config is ObjectNode) {
+                    // Opt out of T+D to run old V1 sync
+                    (copiedConfig as ObjectNode?)!!.put(
+                        "use_1s1t_format",
+                        false,
+                    )
+                }
+                copiedConfig
             }
-            copiedConfig
-        }
+        )
 
         // The record differ code is already adapted to V2 columns format, use the post V2 sync
         // to verify that append mode preserved all the raw records and final records.
