@@ -19,6 +19,7 @@ function main() {
       --input "$ROOT_DIR/$YAML_DIR/$filename_wo_ext.yaml" \
       --output "$ROOT_DIR/$OUTPUT_DIR/$filename_wo_ext.py" \
       --disable-timestamp \
+      --output-model-type 'pydantic.BaseModel' \
       --enum-field-as-literal one \
       --set-default-enum-member
 
